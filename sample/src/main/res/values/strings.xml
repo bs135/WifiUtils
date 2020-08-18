@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">WifiUtils</string>
     <string name="connect">Connect</string>
+    <string name="enable">Enable</string>
+    <string name="disable">Disable</string>
     <string name="disconnect">Disconnect</string>
     <string name="remove">Remove</string>
     <string name="check">Check</string>
+    <string name="scan">Scan</string>
 </resources>

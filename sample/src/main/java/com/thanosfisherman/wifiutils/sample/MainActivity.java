@@ -2,10 +2,13 @@ package com.thanosfisherman.wifiutils.sample;
 
 import android.Manifest;
 import android.content.Context;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -18,10 +21,15 @@ import com.thanosfisherman.wifiutils.wifiConnect.ConnectionErrorCode;
 import com.thanosfisherman.wifiutils.wifiConnect.ConnectionSuccessListener;
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionErrorCode;
 import com.thanosfisherman.wifiutils.wifiDisconnect.DisconnectionSuccessListener;
+import com.thanosfisherman.wifiutils.wifiRemove.RemoveErrorCode;
+import com.thanosfisherman.wifiutils.wifiRemove.RemoveSuccessListener;
+import com.thanosfisherman.wifiutils.wifiScan.ScanResultsListener;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String SSID = "conn-x828678";
-    private static final String PASSWORD = "146080828678";
+    private static final String SSID = "Ot Dieu";
+    private static final String PASSWORD = "abcd@8952";
     private ConnectionSuccessListener successListener = new ConnectionSuccessListener() {
         @Override
         public void success() {
@@ -42,6 +50,15 @@ public class MainActivity extends AppCompatActivity {
         WifiUtils.enableLog(true);
         //TODO: CHECK IF LOCATION SERVICES ARE ON
 
+        final TextView textViewSSID = findViewById(R.id.textview_ssid);
+        textViewSSID.setText(SSID);
+
+        final Button buttonEnable = findViewById(R.id.button_enable);
+        buttonEnable.setOnClickListener(v -> enableWifi());
+
+        final Button buttonDisable = findViewById(R.id.button_disable);
+        buttonDisable.setOnClickListener(v -> disableWifi());
+
         final Button buttonConnect = findViewById(R.id.button_connect);
         buttonConnect.setOnClickListener(v -> connectWithWpa());
 
@@ -50,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
 
         final Button buttonCheck = findViewById(R.id.button_check);
         buttonCheck.setOnClickListener(v -> checkWifi());
+
+        final Button buttonRemove = findViewById(R.id.button_remove);
+        buttonRemove.setOnClickListener(v -> remove(v.getContext()));
+
+        final Button buttonScan = findViewById(R.id.button_scan);
+        buttonScan.setOnClickListener(v -> scanWifi());
 
         WifiUtils.forwardLog((priority, tag, message) -> {
             String customTag = tag + "_" + MainActivity.class.getSimpleName();
@@ -85,10 +108,29 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    private void remove(final Context context) {
+        WifiUtils.withContext(context)
+                .remove(SSID, new RemoveSuccessListener() {
+                    @Override
+                    public void success() {
+                        Toast.makeText(MainActivity.this, "Remove success!", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void failed(@NonNull RemoveErrorCode errorCode) {
+                        Toast.makeText(MainActivity.this, "Failed to remove: " + errorCode.toString(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void enableWifi() {
         WifiUtils.withContext(getApplicationContext()).enableWifi(this::checkResult);
         //or without the callback
         //WifiUtils.withContext(getApplicationContext()).enableWifi();
+    }
+
+    private void disableWifi() {
+        WifiUtils.withContext(getApplicationContext()).disableWifi();
     }
 
     private void checkWifi() {
@@ -101,5 +143,27 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "SUCCESS!", Toast.LENGTH_SHORT).show();
         else
             Toast.makeText(MainActivity.this, "EPIC FAIL!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void scanWifi() {
+        Log.d("scanWifi", "Start scanning...");
+        WifiUtils.withContext(getApplicationContext()).scanWifi(this::getScanResults).start();
+    }
+
+    private void getScanResults(@NonNull final List<ScanResult> results) {
+        if (results.isEmpty()) {
+            Log.i("scanWifi", "SCAN RESULTS IT'S EMPTY");
+            return;
+        }
+        
+        //Log.i("scanWifi", "" + results);
+
+        for (ScanResult result : results) {
+            Log.i("scanWifi", "=== " + result.SSID + " ===");
+            Log.i("scanWifi", "BSSID       : " + result.BSSID);
+            Log.i("scanWifi", "capabilities: " + result.capabilities);
+            Log.i("scanWifi", "level       : " + WifiManager.calculateSignalLevel(result.level, 5));
+            Log.i("scanWifi", "frequency   : " + result.frequency);
+        }
     }
 }
